@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <title>Tetris</title>
+  </head>
+  <body>
+    <div id="tetris-UI">
+      <section id="hold-section">
+        <h2 class="info-title" id="hold-title">HOLD</h2>
+        <canvas class="tetromino-canvas"></canvas>
+      </section>
+      <section id="tetris-info-section">
+        <div class="tetris-info">
+          <h2 class="info-title">SCORE</h2>
+          <h3 class="din-info" id="score">0</h3>
+        </div>
+        <div class="tetris-info">
+          <h2 class="info-title">LEVEL</h2>
+          <h3 class="din-info" id="level">1</h3>
+        </div>
+        <div class="tetris-info">
+          <h2 class="info-title">LINES</h2>
+          <h3 class="din-info" id="lines">0</h3>
+        </div>
+      </section>
+      <canvas id="tetris-board"></canvas>
+      <section id="next-section">
+        <h2 class="info-title" id="next-title">NEXT</h2>
+        <canvas class="tetromino-canvas"></canvas>
+        <canvas class="tetromino-canvas"></canvas>
+        <canvas class="tetromino-canvas"></canvas>
+      </section>
+    </div>
+  </body>
+</html>
