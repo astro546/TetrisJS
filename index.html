@@ -16,7 +16,7 @@
     <div id="tetris-UI">
       <section id="hold-section">
         <h2 class="info-title" id="hold-title">HOLD</h2>
-        <canvas class="tetromino-canvas"></canvas>
+        <canvas class="tetromino-canvas" id="hold-canvas"></canvas>
       </section>
       <section id="tetris-info-section">
         <div class="tetris-info">
@@ -35,10 +35,16 @@
       <canvas id="tetris-board"></canvas>
       <section id="next-section">
         <h2 class="info-title" id="next-title">NEXT</h2>
-        <canvas class="tetromino-canvas"></canvas>
-        <canvas class="tetromino-canvas"></canvas>
-        <canvas class="tetromino-canvas"></canvas>
+        <canvas class="tetromino-canvas next-canvas"></canvas>
       </section>
+      <img src="/img/blueBlock.png" id="blue-block" hidden />
+      <img src="/img/strongBlueBlock.png" id="strong-blue-block" hidden />
+      <img src="/img/redBlock.png" id="red-block" hidden />
+      <img src="/img/greenBlock.png" id="green-block" hidden />
+      <img src="/img/orangeBlock.png" id="orange-block" hidden />
+      <img src="/img/purpleBlock.png" id="purple-block" hidden />
+      <img src="/img/yellowBlock.png" id="yellow-block" hidden />
     </div>
+    <script src="tetris.js"></script>
   </body>
 </html>

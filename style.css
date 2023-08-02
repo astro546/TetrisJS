@@ -1,3 +1,4 @@
+/* Configuracion inicial */
 * {
   padding: 0;
   margin: 0;
@@ -15,6 +16,7 @@ body {
   background-color: black;
 }
 
+/* Tetris Interfaz Grafica */
 #tetris-UI {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
@@ -70,5 +72,5 @@ section {
 
 #next-section {
   grid-column: 3/4;
-  grid-row: 1/4;
+  grid-row: 1/6;
 }
