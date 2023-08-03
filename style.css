@@ -26,7 +26,8 @@ body {
   margin: 0 auto;
 }
 
-section {
+section,
+.alert {
   border: 1rem solid white;
 }
 
@@ -47,6 +48,14 @@ section {
 
 #hold-section {
   grid-row: 1/3;
+}
+
+.tetromino-img {
+  transform: scale(2);
+}
+
+#hold-tetromino {
+  margin: 9rem 13rem;
 }
 
 #tetris-info-section {
@@ -73,4 +82,42 @@ section {
 #next-section {
   grid-column: 3/4;
   grid-row: 1/6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.next-tetromino {
+  margin: 7rem 15rem;
+}
+
+/* Alertas */
+.alert {
+  width: 30rem;
+  height: 20rem;
+  margin: auto;
+}
+
+.alert-title,
+.alert-score {
+  text-align: center;
+}
+
+.alert-title {
+  margin: 2rem;
+}
+
+#start-button {
+  display: block;
+  background-color: white;
+  color: black;
+  width: fit-content;
+  padding: 1rem;
+  margin: 3rem auto;
+  text-decoration: none;
+}
+
+#start-button:active,
+#start-button:hover {
+  background-color: aqua;
 }

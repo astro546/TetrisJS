@@ -9,14 +9,14 @@
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/style.css" />
     <title>Tetris</title>
   </head>
   <body>
     <div id="tetris-UI">
       <section id="hold-section">
         <h2 class="info-title" id="hold-title">HOLD</h2>
-        <canvas class="tetromino-canvas" id="hold-canvas"></canvas>
+        <img class="tetromino-img" id="hold-tetromino" />
       </section>
       <section id="tetris-info-section">
         <div class="tetris-info">
@@ -35,8 +35,11 @@
       <canvas id="tetris-board"></canvas>
       <section id="next-section">
         <h2 class="info-title" id="next-title">NEXT</h2>
-        <canvas class="tetromino-canvas next-canvas"></canvas>
+        <img class="tetromino-img next-tetromino" id="next-tetromino-1" />
+        <img class="tetromino-img next-tetromino" id="next-tetromino-2" />
+        <img class="tetromino-img next-tetromino" id="next-tetromino-3" />
       </section>
+      <!-- Individual blocks -->
       <img src="/img/blueBlock.png" id="blue-block" hidden />
       <img src="/img/strongBlueBlock.png" id="strong-blue-block" hidden />
       <img src="/img/redBlock.png" id="red-block" hidden />
@@ -45,6 +48,6 @@
       <img src="/img/purpleBlock.png" id="purple-block" hidden />
       <img src="/img/yellowBlock.png" id="yellow-block" hidden />
     </div>
-    <script src="tetris.js"></script>
+    <script src="/tetris.js"></script>
   </body>
 </html>
