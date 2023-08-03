@@ -17,6 +17,14 @@ let nextBlocks = [0, 0, 0];
 let holdBlock;
 let currentBlock;
 let tetrisBoardMatrix = [];
+let coords = { x: 0, y: 0 };
+const keyState = {
+  ArrowUp: false,
+  ArrowDown: false,
+  ArrowLeft: false,
+  ArrowRight: false,
+  c: false,
+};
 
 //------------------- Configuracion de los canvas ------------------
 let FPS = 1000 / 15;
@@ -204,8 +212,49 @@ function initTetrisBoard() {
   }
 }
 
-// ----------------------- Eventos del teclado -----------------------
+// Detecta colisiones
+function collision() {
+  console.log('Proximamente');
+}
 
+// ----------------------- Eventos del teclado -----------------------
+document.addEventListener('keydown', (e) => {
+  keyState[e.key] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  keyState[e.key] = false;
+});
+
+function keysHandler() {
+  const keyPressed = Object.entries(keyState).filter(([key, value]) => {
+    return value === true;
+  });
+
+  switch (keyPressed) {
+    case ArrowUp:
+      rotate(currentBlock);
+      break;
+    case ArrowDown:
+      if (!collision) {
+        coords.y++;
+      }
+      break;
+    case ArrowLeft:
+      if (coords.x > 0 + blocks[currentBlock].matrix.length) {
+        coords.x--;
+      }
+      break;
+    case ArrowRight:
+      if (coords.x < 10 - blocks[currentBlock].matrix.length) {
+        coords.x++;
+      }
+      break;
+    case c:
+    default:
+      return;
+  }
+}
 // ----------------------- Flujo del Juego ---------------------------
 // Inicializa el juego
 function startGame() {
