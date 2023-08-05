@@ -27,7 +27,7 @@ const keyState = {
 };
 
 //------------------- Configuracion de los canvas ------------------
-let FPS = 1000 / 15;
+let FPS = 1000 / 5;
 let lastFrame = 0;
 const cellSize = 45;
 const ctxTetrisBoard = tetrisBoard.getContext('2d');
@@ -121,35 +121,104 @@ function shift() {
   nextBlocks = [...rest, first];
 }
 
-function aimBlock() {}
+// ----------------- Funciones del tablero ------------------------
 
-// Clase encargada de la produccion de los bloques
+// Actualiza la matriz del tablero del tetris
+function updateTetrisBoard(direction) {
+  const matrix = blocks[currentBlock].matrix;
+  const len = matrix.length;
+  let lastPosition = { x: 0, y: 0 };
+
+  // Limpia el espacio de la ultima posicion del tetromino
+  for (let k = 0; k < len; k++) {
+    for (let w = 0; w < len; w++) {
+      if (direction) {
+        switch (direction) {
+          case 'left':
+            lastPosition.x = coords.x + 1;
+            break;
+          case 'right':
+            lastPosition.x = coords.x - 1;
+            break;
+          case 'down':
+            lastPosition.y = coords.y - 1;
+            break;
+          default:
+            return;
+        }
+        tetrisBoardMatrix[k + lastPosition.y][w + lastPosition.x] = 0;
+      }
+    }
+  }
+
+  // Pone el tetromino en el nuevo lugar
+  for (let i = 0; i < len; i++) {
+    for (let j = 0; j < len; j++) {
+      if (matrix[i][j]) {
+        tetrisBoardMatrix[i + coords.y][j + coords.x] = currentBlock;
+      }
+    }
+  }
+
+  console.log(tetrisBoardMatrix);
+}
+
+// Pone el bloque dentro del tablero del tetris
+function updateTetrisCanvas() {
+  for (let i = 0; i < 20; i++) {
+    for (let j = 0; j < 10; j++) {
+      if (tetrisBoardMatrix[i][j]) {
+        console.log(j, j + coords.x, i, i + coords.y);
+        ctxTetrisBoard.drawImage(
+          blocks[currentBlock].block,
+          j * cellSize,
+          i * cellSize,
+          cellSize,
+          cellSize
+        );
+      }
+    }
+  }
+}
+
+// Inicializa el tablero del tetris
+function initTetrisBoard() {
+  // Tetris board
+  tetrisBoard.width = cellSize * 10;
+  tetrisBoard.height = cellSize * 20;
+  tetrisBoard.style.margin = 'auto';
+  tetrisBoard.style.border = '1rem solid white';
+  for (let i = 0; i < 20; i++) {
+    tetrisBoardMatrix.push([]);
+    for (let j = 0; j < 10; j++) {
+      tetrisBoardMatrix[i].push(0);
+    }
+  }
+}
+
+// Mueve el bloque dentro del tablero de tetris
+function moveBlock(factory, timestamp) {
+  const direction = keysHandler();
+  const delta = timestamp - lastFrame;
+
+  if (delta > FPS) {
+    updateTetrisBoard();
+    updateTetrisCanvas();
+    lastFrame = timestamp - (deltaTime % FPS);
+  }
+  requestAnimationFrame(moveBlock);
+}
+
+// Detecta colisiones
+function collision() {
+  return false;
+}
+
+// -------------------------- Clase encargada de la produccion de los bloques ---------------
 class BlockFactory {
   // Obtiene el numero del siguiente bloque
   getNextBlock() {
     return Math.floor(Math.random() * 7) + 1;
-  }
-
-  // Pone el bloque dentro del tablero del tetris
-  placeBlock(block, position) {
-    const matrix = blocks[block].matrix;
-    const len = matrix.length;
-
-    for (let i = 0; i < len; i++) {
-      for (let j = 0; j < len; j++) {
-        if (matrix[i][j]) {
-          tetrisBoardMatrix[i][position + j] = 1;
-          ctxTetrisBoard.drawImage(
-            blocks[block].block,
-            (j + position) * cellSize,
-            i * cellSize,
-            cellSize,
-            cellSize
-          );
-        }
-      }
-    }
-    console.log(tetrisBoardMatrix);
   }
 
   // Empieza la generacion de bloques
@@ -185,36 +254,19 @@ class BlockFactory {
       case 4:
       case 5:
       case 6:
-        this.placeBlock(block, 3);
+        coords.x = 3;
+        updateTetrisBoard();
+        updateTetrisCanvas();
         break;
       case 7:
-        this.placeBlock(block, 4);
+        coords.x = 4;
+        updateTetrisBoard();
+        updateTetrisCanvas();
         break;
       default:
         return;
     }
   }
-}
-
-// ----------------- Funciones de los canvas ------------------------
-// Inicializa el tablero del tetris
-function initTetrisBoard() {
-  // Tetris board
-  tetrisBoard.width = cellSize * 10;
-  tetrisBoard.height = cellSize * 20;
-  tetrisBoard.style.margin = 'auto';
-  tetrisBoard.style.border = '1rem solid white';
-  for (let i = 0; i < 20; i++) {
-    tetrisBoardMatrix.push([]);
-    for (let j = 0; j < 10; j++) {
-      tetrisBoardMatrix[i].push(0);
-    }
-  }
-}
-
-// Detecta colisiones
-function collision() {
-  console.log('Proximamente');
 }
 
 // ----------------------- Eventos del teclado -----------------------
@@ -231,29 +283,36 @@ function keysHandler() {
     return value === true;
   });
 
-  switch (keyPressed) {
-    case ArrowUp:
-      rotate(currentBlock);
-      break;
-    case ArrowDown:
-      if (!collision) {
-        coords.y++;
-      }
-      break;
-    case ArrowLeft:
-      if (coords.x > 0 + blocks[currentBlock].matrix.length) {
-        coords.x--;
-      }
-      break;
-    case ArrowRight:
-      if (coords.x < 10 - blocks[currentBlock].matrix.length) {
-        coords.x++;
-      }
-      break;
-    case c:
-    default:
-      return;
+  if (keyPressed.length > 0) {
+    const key = keyPressed[0][0];
+    switch (key) {
+      case 'ArrowUp':
+        rotate(blocks[currentBlock].matrix);
+        return 'up';
+      case 'ArrowDown':
+        if (!collision) {
+          coords.y++;
+        }
+        return 'down';
+      case 'ArrowLeft':
+        if (coords.x > 0) {
+          coords.x--;
+        }
+        return 'left';
+      case 'ArrowRight':
+        if (coords.x < 10 - blocks[currentBlock].matrix.length) {
+          coords.x++;
+        }
+        return 'right';
+      case 'c':
+        holdBlock = currentBlock;
+
+      default:
+        return false;
+    }
+    // console.log(`${coords.x}, ${coords.y}`);
   }
+  return false;
 }
 // ----------------------- Flujo del Juego ---------------------------
 // Inicializa el juego
@@ -261,6 +320,7 @@ function startGame() {
   initTetrisBoard();
   const blockFactory = new BlockFactory();
   blockFactory.startGenBlocks();
+  requestAnimationFrame(moveBlock);
 }
 
 window.onload = function () {
