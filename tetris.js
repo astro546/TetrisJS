@@ -121,6 +121,60 @@ function shift() {
   nextBlocks = [...rest, first];
 }
 
+// ----------------------- Eventos del teclado -----------------------
+
+// Arreglar porblema de que la pieza se mueve mas de una posicion debido al evento de presionar las teclas del teclado
+
+// document.addEventListener('keydown', (e) =>
+//   setTimeout((keyState[e.key] = true), 50)
+// );
+
+document.addEventListener('keydown', (e) => {
+  keyState[e.key] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  keyState[e.key] = false;
+});
+
+function keysHandler() {
+  const keyPressed = Object.entries(keyState).filter(([key, value]) => {
+    return value === true;
+  });
+
+  if (keyPressed.length > 0) {
+    const key = keyPressed[0][0];
+    switch (key) {
+      case 'ArrowUp':
+        rotate(blocks[currentBlock].matrix);
+        return 'up';
+      case 'ArrowDown':
+        if (!collision) {
+          coords.y++;
+        }
+        return 'down';
+      case 'ArrowLeft':
+        if (coords.x > 0) {
+          coords.x--;
+          console.log(coords.x);
+        }
+        return 'left';
+      case 'ArrowRight':
+        if (coords.x < 10 - blocks[currentBlock].matrix.length) {
+          coords.x++;
+          console.log(coords.x);
+        }
+        return 'right';
+      case 'c':
+        holdBlock = currentBlock;
+
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
 // ----------------- Funciones del tablero ------------------------
 
 // Actualiza la matriz del tablero del tetris
@@ -129,26 +183,28 @@ function updateTetrisBoard(direction) {
   const len = matrix.length;
   let lastPosition = { x: 0, y: 0 };
 
-  // Limpia el espacio de la ultima posicion del tetromino
-  for (let k = 0; k < len; k++) {
-    for (let w = 0; w < len; w++) {
-      if (direction) {
-        switch (direction) {
-          case 'left':
-            lastPosition.x = coords.x + 1;
-            break;
-          case 'right':
-            lastPosition.x = coords.x - 1;
-            break;
-          case 'down':
-            lastPosition.y = coords.y - 1;
-            break;
-          default:
-            return;
-        }
+  if (direction) {
+    switch (direction) {
+      case 'left':
+        lastPosition.x = coords.x + 1;
+        break;
+      case 'right':
+        lastPosition.x = coords.x - 1;
+        break;
+      case 'down':
+        lastPosition.y = coords.y - 1;
+        break;
+      default:
+        return;
+    }
+
+    // Limpia el espacio de la ultima posicion del tetromino
+    for (let k = 0; k < len; k++) {
+      for (let w = 0; w < len; w++) {
         tetrisBoardMatrix[k + lastPosition.y][w + lastPosition.x] = 0;
       }
     }
+    console.log(tetrisBoardMatrix, 153);
   }
 
   // Pone el tetromino en el nuevo lugar
@@ -159,16 +215,17 @@ function updateTetrisBoard(direction) {
       }
     }
   }
-
-  console.log(tetrisBoardMatrix);
 }
 
 // Pone el bloque dentro del tablero del tetris
 function updateTetrisCanvas() {
+  // Limpiamos el canvas
+  ctxTetrisBoard.clearRect(0, 0, tetrisBoard.width, tetrisBoard.height);
+
+  // Dibujamos el bloque en su nueva posicion
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 10; j++) {
-      if (tetrisBoardMatrix[i][j]) {
-        console.log(j, j + coords.x, i, i + coords.y);
+      if (tetrisBoardMatrix[i][j] > 0) {
         ctxTetrisBoard.drawImage(
           blocks[currentBlock].block,
           j * cellSize,
@@ -197,14 +254,14 @@ function initTetrisBoard() {
 }
 
 // Mueve el bloque dentro del tablero de tetris
-function moveBlock(factory, timestamp) {
+function moveBlock(timestamp) {
   const direction = keysHandler();
   const delta = timestamp - lastFrame;
 
   if (delta > FPS) {
-    updateTetrisBoard();
+    updateTetrisBoard(direction);
     updateTetrisCanvas();
-    lastFrame = timestamp - (deltaTime % FPS);
+    lastFrame = timestamp - (delta % FPS);
   }
   requestAnimationFrame(moveBlock);
 }
@@ -255,65 +312,19 @@ class BlockFactory {
       case 5:
       case 6:
         coords.x = 3;
-        updateTetrisBoard();
-        updateTetrisCanvas();
         break;
       case 7:
         coords.x = 4;
-        updateTetrisBoard();
-        updateTetrisCanvas();
         break;
       default:
         return;
     }
+    updateTetrisBoard();
+    updateTetrisCanvas();
+    console.log(tetrisBoardMatrix);
   }
 }
 
-// ----------------------- Eventos del teclado -----------------------
-document.addEventListener('keydown', (e) => {
-  keyState[e.key] = true;
-});
-
-document.addEventListener('keyup', (e) => {
-  keyState[e.key] = false;
-});
-
-function keysHandler() {
-  const keyPressed = Object.entries(keyState).filter(([key, value]) => {
-    return value === true;
-  });
-
-  if (keyPressed.length > 0) {
-    const key = keyPressed[0][0];
-    switch (key) {
-      case 'ArrowUp':
-        rotate(blocks[currentBlock].matrix);
-        return 'up';
-      case 'ArrowDown':
-        if (!collision) {
-          coords.y++;
-        }
-        return 'down';
-      case 'ArrowLeft':
-        if (coords.x > 0) {
-          coords.x--;
-        }
-        return 'left';
-      case 'ArrowRight':
-        if (coords.x < 10 - blocks[currentBlock].matrix.length) {
-          coords.x++;
-        }
-        return 'right';
-      case 'c':
-        holdBlock = currentBlock;
-
-      default:
-        return false;
-    }
-    // console.log(`${coords.x}, ${coords.y}`);
-  }
-  return false;
-}
 // ----------------------- Flujo del Juego ---------------------------
 // Inicializa el juego
 function startGame() {
