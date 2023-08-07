@@ -28,7 +28,7 @@ const keyState = {
 };
 
 //------------------- Configuracion de los canvas ------------------
-let FPS = 1000 / 5;
+let FPS = 1000 / 20;
 let lastFrame = 0;
 const cellSize = 45;
 const ctxTetrisBoard = tetrisBoard.getContext('2d');
@@ -122,6 +122,11 @@ function shift() {
   nextBlocks = [...rest, first];
 }
 
+// Detecta colisiones
+function collision() {
+  return false;
+}
+
 // ----------------------- Eventos del teclado -----------------------
 
 document.addEventListener('keydown', (e) => {
@@ -131,24 +136,26 @@ document.addEventListener('keydown', (e) => {
       rotate(blocks[currentBlock].matrix);
       return 'up';
     case 'ArrowDown':
-      if (!collision) {
+      if (coords.y < 18) {
         coords.y++;
+        console.log(coords.x);
       }
-      return 'down';
+      break;
     case 'ArrowLeft':
       if (coords.x > 0) {
         coords.x--;
         console.log(coords.x);
       }
-      return 'left';
+      break;
     case 'ArrowRight':
-      if (coords.x < 10 - blocks[currentBlock].matrix.length) {
+      if (coords.x < 10 - currentMatrix.length) {
         coords.x++;
         console.log(coords.x);
       }
-      return 'right';
+      break;
     case 'c':
       holdBlock = currentBlock;
+      break;
 
     default:
       return false;
@@ -165,13 +172,13 @@ function updateTetrisBoard() {
   let tetrominoIndexX = 0;
   let tetrominoIndexY = 0;
   let insideTetrominoZone = false;
+  let insideTetrominoZoneX = false;
+  let insideTetrominoZoneY = false;
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 10; j++) {
-      insideTetrominoZone =
-        j >= coords.x &&
-        j <= coords.x + len - 1 &&
-        i >= coords.y &&
-        i <= coords.y + len - 1;
+      insideTetrominoZoneX = j >= coords.x && j <= coords.x + len - 1;
+      insideTetrominoZoneY = i >= coords.y && i <= coords.y + len - 1;
+      insideTetrominoZone = insideTetrominoZoneX && insideTetrominoZoneY;
 
       if (
         insideTetrominoZone &&
@@ -182,14 +189,14 @@ function updateTetrisBoard() {
         tetrisBoardMatrix[i][j] = 0;
       }
 
-      if (insideTetrominoZone && tetrominoIndexX < len - 1) {
+      if (insideTetrominoZoneX && tetrominoIndexX < len - 1) {
         tetrominoIndexX++;
       } else {
         tetrominoIndexX = 0;
       }
     }
 
-    if (tetrominoIndexY < len - 1) {
+    if (insideTetrominoZoneY && tetrominoIndexY < len - 1) {
       tetrominoIndexY++;
     } else {
       tetrominoIndexY = 0;
@@ -243,11 +250,6 @@ function moveBlock(timestamp) {
     lastFrame = timestamp - (delta % FPS);
   }
   requestAnimationFrame(moveBlock);
-}
-
-// Detecta colisiones
-function collision() {
-  return false;
 }
 
 // -------------------------- Clase encargada de la produccion de los bloques ---------------
