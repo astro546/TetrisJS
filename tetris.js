@@ -306,8 +306,48 @@ function shift() {
 }
 
 // Detecta colisiones
-// Arreglarr lo de lass colisiones a la izquierda del tablero
-function collision(x, y) {}
+function collision(direction) {
+  const height = currentMatrix.length;
+  const width = currentMatrix[0].length;
+
+  switch (direction) {
+    case 'left':
+      for (let cell = 0; cell < height; cell++) {
+        const newX = coords.x - 1;
+        if (currentMatrix[cell][0]) {
+          if (tetrisBoardMatrix[cell + coords.y][newX] || newX < 0) {
+            return true;
+          }
+        }
+      }
+      break;
+
+    case 'right':
+      for (let cell = 0; cell < height; cell++) {
+        const newX = coords.x + width;
+        if (currentMatrix[cell][width - 1])
+          if (tetrisBoardMatrix[cell + coords.y][newX] || newX >= 10) {
+            return true;
+          }
+      }
+      break;
+
+    case 'down':
+      for (let cell = 0; cell < width; cell++) {
+        const newY = coords.y + height;
+        if (currentMatrix[height - 1][cell]) {
+          if (tetrisBoardMatrix[newY][cell] || newY >= 20) {
+            return true;
+          }
+        }
+      }
+      break;
+
+    default:
+      return false;
+  }
+  return false;
+}
 
 // Corrige la rotacion si se encuentra en un borde del tablero
 function correctRotate(rotatedMatrix) {
@@ -339,18 +379,18 @@ document.addEventListener('keydown', (e) => {
       currentMatrix = rotatedMatrix;
       break;
     case 'ArrowDown':
-      if (coords.y < 20 - currentMatrix.length) {
+      if (!collision('down')) {
         coords.y++;
       }
       break;
     case 'ArrowLeft':
-      if (coords.x > 0) {
+      if (!collision('left')) {
         coords.x--;
         // console.log(coords.x);
       }
       break;
     case 'ArrowRight':
-      if (coords.x < 10 - currentMatrix[0].length) {
+      if (!collision('right')) {
         coords.x++;
         // console.log(coords.x);
       }
