@@ -14,7 +14,7 @@ let lines = 0;
 let comboCounter = 0;
 let gameOver = false;
 let nextBlocks = [0, 0, 0];
-let holdBlock;
+let holdBlock = 0;
 let currentBlock;
 let currentMatrix;
 let currentAngle = 0;
@@ -219,6 +219,7 @@ const blocks = {
     tetromino: '/img/SquareBlock.png',
   },
 };
+Object.seal(blocks);
 
 // Objeto con las filas y columnas libres de cada rotacion en angulos de los tetrominos
 const freeSpaceAngles = {
@@ -228,8 +229,67 @@ const freeSpaceAngles = {
   270: { row: 'none', column: 2 },
 };
 
-Object.seal(blocks);
+// -------------------------- Clase encargada de la produccion de los bloques ---------------
+class BlockFactory {
+  // Obtiene el numero del siguiente bloque
+  getNextBlock() {
+    return Math.floor(Math.random() * 7) + 1;
+  }
 
+  // Empieza la generacion de bloques
+  startGenBlocks() {
+    currentBlock = this.getNextBlock();
+    currentMatrix = blocks[currentBlock].matrix[0];
+    console.log(currentMatrix);
+    for (let i = 0; i < 3; i++) {
+      nextBlocks[i] = this.getNextBlock();
+      const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
+      nextTetromino.src = blocks[nextBlocks[i]].tetromino;
+    }
+    this.genBlock(currentBlock);
+  }
+
+  // Actualiza los bloques siguientes
+  updateNextBlocks() {
+    const newBlock = this.getNextBlock();
+    currentBlock = nextBlocks[0];
+    currentMatrix = blocks[currentBlock].matrix[0];
+    shift();
+    nextBlocks[2] = newBlock;
+    for (let i = 0; i < 3; i++) {
+      const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
+      nextTetromino.src = blocks[nextBlocks[i]].tetromino;
+    }
+    holdTetromino.src = blocks[holdBlock].tetromino;
+    return currentBlock;
+  }
+
+  // Genera el bloque de acuerdo al numero
+  genBlock(block) {
+    switch (block) {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+        coords.x = 3;
+        break;
+      case 7:
+        coords.x = 4;
+        break;
+      default:
+        return;
+    }
+    coords.y = 0;
+    updateTetrisBoard();
+    updateTetrisCanvas();
+    console.log(tetrisBoardMatrix);
+  }
+}
+const blockFactory = new BlockFactory();
+
+// ------------------ funciones de los tetrominos -------------------
 // @see https://codereview.stackexchange.com/a/186834
 function rotate() {
   if (currentAngle < 270) {
@@ -254,8 +314,8 @@ function correctRotate(rotatedMatrix) {
   if (currentBlock !== 7) {
     for (let i = 0; i < rotatedMatrix.length; i++) {
       for (let j = 0; j < rotatedMatrix[i].length; j++) {
+        // Evalua si algun bloque se va mas alla de la derecha del tablero
         if (rotatedMatrix[i][j] && coords.x + j >= 10) {
-          console.log(rotatedMatrix[i].length);
           if (rotatedMatrix[i].length === 3) {
             return coords.x - 1;
           } else {
@@ -296,7 +356,17 @@ document.addEventListener('keydown', (e) => {
       }
       break;
     case 'c':
-      holdBlock = currentBlock;
+      if (holdBlock === 0) {
+        holdBlock = currentBlock;
+        currentBlock = blockFactory.updateNextBlocks();
+      } else {
+        const temp = currentBlock;
+        currentBlock = holdBlock;
+        holdBlock = temp;
+        holdTetromino.src = blocks[holdBlock].tetromino;
+      }
+      currentMatrix = blocks[currentBlock].matrix[0];
+      blockFactory.genBlock(currentBlock);
       break;
 
     default:
@@ -401,69 +471,10 @@ function moveBlock(timestamp) {
   requestAnimationFrame(moveBlock);
 }
 
-// -------------------------- Clase encargada de la produccion de los bloques ---------------
-class BlockFactory {
-  // Obtiene el numero del siguiente bloque
-  getNextBlock() {
-    return Math.floor(Math.random() * 7) + 1;
-  }
-
-  // Empieza la generacion de bloques
-  startGenBlocks() {
-    currentBlock = this.getNextBlock();
-    currentMatrix = blocks[currentBlock].matrix[currentAngle];
-    console.log(currentMatrix);
-    for (let i = 0; i < 3; i++) {
-      nextBlocks[i] = this.getNextBlock();
-      const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
-      nextTetromino.src = blocks[nextBlocks[i]].tetromino;
-    }
-    this.genBlock(currentBlock);
-  }
-
-  // Actualiza los bloques siguientes
-  updateNextBlocks() {
-    const newBlock = this.getNextBlock();
-    currentBlock = nextBlocks[0];
-    currentMatrix = blocks[currentBlock].matrix[currentAngle];
-    shift();
-    nextBlocks[2] = newBlock;
-    for (let i = 0; i < 3; i++) {
-      const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
-      nextTetromino.src = blocks[nextBlocks[i]].tetromino;
-    }
-    return currentBlock;
-  }
-
-  // Genera el bloque de acuerdo al numero
-  genBlock(block) {
-    switch (block) {
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-        coords.x = 3;
-        break;
-      case 7:
-        coords.x = 4;
-        break;
-      default:
-        return;
-    }
-    coords.y = 0;
-    updateTetrisBoard();
-    updateTetrisCanvas();
-    console.log(tetrisBoardMatrix);
-  }
-}
-
 // ----------------------- Flujo del Juego ---------------------------
 // Inicializa el juego
 function startGame() {
   initTetrisBoard();
-  const blockFactory = new BlockFactory();
   blockFactory.startGenBlocks();
   requestAnimationFrame(moveBlock);
 }
