@@ -45,7 +45,6 @@ const strongBlueBlock = document.querySelector('#strong-blue-block');
 const purpleBlock = document.querySelector('#purple-block');
 const yellowBlock = document.querySelector('#yellow-block');
 
-// Objeto con la informacion de todos loss tetrominos
 const blocks = {
   1: {
     matrix: [
@@ -122,20 +121,12 @@ const freeSpaceAngles = {
 
 Object.seal(blocks);
 
-// Rota la pieza actual
 // @see https://codereview.stackexchange.com/a/186834
 function rotate() {
   const N = currentMatrix.length - 1;
   const result = currentMatrix.map((row, i) =>
     row.map((val, j) => currentMatrix[N - j][i])
   );
-
-  if (currentAngle < 270) {
-    currentAngle += 90;
-  } else {
-    currentAngle = 0;
-  }
-  console.log(currentAngle);
   return result;
 }
 
@@ -145,74 +136,7 @@ function shift() {
 }
 
 // Detecta colisiones
-// Arreglarr lo de lass colisiones a la izquierda del tablero
-function collision(fixedX, fixedY) {
-  const freeSpace = freeSpaceAngles[currentAngle];
-  const freeSpaceRow = freeSpace.row;
-  const freeSpaceColumn = freeSpace.column;
-  const len = currentMatrix.length;
-
-  if (len > 2) {
-    if (freeSpaceRow !== 'none') {
-      const collisionX = fixedX < 1 || fixedX > 10 - len;
-
-      switch (freeSpaceRow) {
-        case 0:
-          if (len === 4) {
-            if (collisionX || fixedY > 18) {
-              return true;
-            }
-          } else if (collisionX || fixedY > 17) {
-            return true;
-          }
-          break;
-
-        case 2:
-          if (len === 4) {
-            if (collisionX || fixedY > 17) {
-              return true;
-            }
-          } else if (collisionX || fixedY > 18) {
-            return true;
-          }
-          break;
-
-        default:
-          break;
-      }
-    } else {
-      const collisionY = fixedY > 20 - len;
-      switch (freeSpaceColumn) {
-        case 0:
-          if (len === 4) {
-            if (fixedX < 0 || fixedX > 8 || collisionY) {
-              console.log(fixedX, coords.x);
-              return true;
-            }
-          } else if (fixedX < 0 || fixedX > 7 || collisionY) {
-            console.log(fixedX, coords.x);
-            return true;
-          }
-          break;
-
-        case 2:
-          if (len === 4) {
-            if (fixedX < 0 || fixedX > 7 || collisionY) {
-              return true;
-            }
-          } else if (fixedX < 0 || fixedX > 8 || collisionY) {
-            return true;
-          }
-          break;
-
-        default:
-          break;
-      }
-    }
-  } else if (fixedX < 0 || fixedX > 8 || fixedY > 18) {
-    return true;
-  }
-
+function collision() {
   return false;
 }
 
@@ -223,21 +147,23 @@ document.addEventListener('keydown', (e) => {
   switch (key) {
     case 'ArrowUp':
       currentMatrix = rotate();
-      console.log(currentMatrix);
-      break;
+      return 'up';
     case 'ArrowDown':
-      if (!collision(coords.x, coords.y + 1)) {
+      if (coords.y < 18) {
         coords.y++;
+        console.log(coords.x);
       }
       break;
     case 'ArrowLeft':
-      if (!collision(coords.x - 1, coords.y)) {
+      if (coords.x > 0) {
         coords.x--;
+        console.log(coords.x);
       }
       break;
     case 'ArrowRight':
-      if (!collision(coords.x + 1, coords.y)) {
+      if (coords.x < 10 - currentMatrix.length) {
         coords.x++;
+        console.log(coords.x);
       }
       break;
     case 'c':
@@ -262,7 +188,7 @@ function updateTetrisBoard() {
   let insideTetrominoZoneX = false;
   let insideTetrominoZoneY = false;
   for (let i = 0; i < 20; i++) {
-    for (let j = 1; j <= 10; j++) {
+    for (let j = 0; j < 10; j++) {
       insideTetrominoZoneX = j >= coords.x && j <= coords.x + len - 1;
       insideTetrominoZoneY = i >= coords.y && i <= coords.y + len - 1;
       insideTetrominoZone = insideTetrominoZoneX && insideTetrominoZoneY;
@@ -298,7 +224,7 @@ function updateTetrisCanvas() {
 
   // Dibujamos el bloque en su nueva posicion
   for (let i = 0; i < 20; i++) {
-    for (let j = 1; j <= 10; j++) {
+    for (let j = 0; j < 10; j++) {
       if (tetrisBoardMatrix[i][j] > 0) {
         ctxTetrisBoard.drawImage(
           blocks[currentBlock].block,
@@ -321,7 +247,7 @@ function initTetrisBoard() {
   tetrisBoard.style.border = '1rem solid white';
   for (let i = 0; i < 20; i++) {
     tetrisBoardMatrix.push([]);
-    for (let j = 0; j < 11; j++) {
+    for (let j = 0; j < 10; j++) {
       tetrisBoardMatrix[i].push(0);
     }
   }
@@ -357,6 +283,7 @@ class BlockFactory {
     currentBlock = this.getNextBlock();
     currentMatrix = blocks[currentBlock].matrix;
     currentAngle = currentBlock === 6 ? 180 : 0;
+    console.log(currentMatrix);
     for (let i = 0; i < 3; i++) {
       nextBlocks[i] = this.getNextBlock();
       const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
