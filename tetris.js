@@ -47,65 +47,174 @@ const yellowBlock = document.querySelector('#yellow-block');
 
 const blocks = {
   1: {
-    matrix: [
-      [1, 1, 0],
-      [0, 1, 1],
-      [0, 0, 0],
-    ],
+    matrix: {
+      0: [
+        [1, 1, 0],
+        [0, 1, 1],
+      ],
+
+      90: [
+        [0, 1],
+        [1, 1],
+        [1, 0],
+      ],
+
+      180: [
+        [1, 1, 0],
+        [0, 1, 1],
+      ],
+
+      270: [
+        [1, 1, 0],
+        [0, 1, 1],
+      ],
+    },
     block: redBlock,
     tetromino: '/img/redSBlock.png',
   },
+
   2: {
-    matrix: [
-      [0, 0, 1],
-      [1, 1, 1],
-      [0, 0, 0],
-    ],
+    matrix: {
+      0: [
+        [0, 0, 1],
+        [1, 1, 1],
+      ],
+
+      90: [
+        [1, 0],
+        [1, 0],
+        [1, 1],
+      ],
+
+      180: [
+        [1, 1, 1],
+        [1, 0, 0],
+      ],
+
+      270: [
+        [1, 1],
+        [0, 1],
+        [0, 1],
+      ],
+    },
     block: orangeBlock,
     tetromino: '/img/orangeLBlock.png',
   },
+
   3: {
-    matrix: [
-      [0, 1, 1],
-      [1, 1, 0],
-      [0, 0, 0],
-    ],
+    matrix: {
+      0: [
+        [0, 1, 1],
+        [1, 1, 0],
+      ],
+
+      90: [
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ],
+
+      180: [
+        [0, 1, 1],
+        [1, 1, 0],
+      ],
+
+      270: [
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ],
+    },
     block: greenBlock,
     tetromino: '/img/greenSBlock.png',
   },
+
   4: {
-    matrix: [
-      [1, 0, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-    ],
+    matrix: {
+      0: [
+        [1, 0, 0],
+        [1, 1, 1],
+      ],
+
+      90: [
+        [1, 1],
+        [1, 0],
+        [1, 0],
+      ],
+
+      180: [
+        [1, 1, 1],
+        [0, 0, 1],
+      ],
+
+      270: [
+        [0, 1],
+        [0, 1],
+        [1, 1],
+      ],
+    },
     block: strongBlueBlock,
     tetromino: '/img/blueLBlock.png',
   },
   5: {
-    matrix: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-    ],
+    matrix: {
+      0: [
+        [0, 1, 0],
+        [1, 1, 1],
+      ],
+
+      90: [
+        [1, 0],
+        [1, 1],
+        [1, 0],
+      ],
+
+      180: [
+        [1, 1, 1],
+        [0, 1, 0],
+      ],
+
+      270: [
+        [0, 1],
+        [1, 1],
+        [0, 1],
+      ],
+    },
     block: purpleBlock,
     tetromino: '/img/TBlock.png',
   },
   6: {
-    matrix: [
-      [0, 0, 0, 0],
-      [1, 1, 1, 1],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ],
+    matrix: {
+      0: [[1, 1, 1, 1]],
+      90: [[1], [1], [1], [1]],
+      180: [[1, 1, 1, 1]],
+      270: [[1], [1], [1], [1]],
+    },
     block: blueBlock,
     tetromino: '/img/IBlock.png',
   },
   7: {
-    matrix: [
-      [1, 1],
-      [1, 1],
-    ],
+    matrix: {
+      0: [
+        [1, 1],
+        [1, 1],
+      ],
+
+      90: [
+        [1, 1],
+        [1, 1],
+      ],
+
+      180: [
+        [1, 1],
+        [1, 1],
+      ],
+
+      270: [
+        [1, 1],
+        [1, 1],
+      ],
+    },
     block: yellowBlock,
     tetromino: '/img/SquareBlock.png',
   },
@@ -123,11 +232,12 @@ Object.seal(blocks);
 
 // @see https://codereview.stackexchange.com/a/186834
 function rotate() {
-  const N = currentMatrix.length - 1;
-  const result = currentMatrix.map((row, i) =>
-    row.map((val, j) => currentMatrix[N - j][i])
-  );
-  return result;
+  if (currentAngle < 270) {
+    currentAngle += 90;
+  } else {
+    currentAngle = 0;
+  }
+  return blocks[currentBlock].matrix[currentAngle];
 }
 
 function shift() {
@@ -136,8 +246,26 @@ function shift() {
 }
 
 // Detecta colisiones
-function collision() {
-  return false;
+// Arreglarr lo de lass colisiones a la izquierda del tablero
+function collision(x, y) {}
+
+// Corrige la rotacion si se encuentra en un borde del tablero
+function correctRotate(rotatedMatrix) {
+  if (currentBlock !== 7) {
+    for (let i = 0; i < rotatedMatrix.length; i++) {
+      for (let j = 0; j < rotatedMatrix[i].length; j++) {
+        if (rotatedMatrix[i][j] && coords.x + j >= 10) {
+          console.log(rotatedMatrix[i].length);
+          if (rotatedMatrix[i].length === 3) {
+            return coords.x - 1;
+          } else {
+            return 6;
+          }
+        }
+      }
+    }
+  }
+  return coords.x;
 }
 
 // ----------------------- Eventos del teclado -----------------------
@@ -146,24 +274,25 @@ document.addEventListener('keydown', (e) => {
   const key = e.key;
   switch (key) {
     case 'ArrowUp':
-      currentMatrix = rotate();
-      return 'up';
+      const rotatedMatrix = rotate();
+      coords.x = correctRotate(rotatedMatrix);
+      currentMatrix = rotatedMatrix;
+      break;
     case 'ArrowDown':
-      if (coords.y < 18) {
+      if (coords.y < 20 - currentMatrix.length) {
         coords.y++;
-        console.log(coords.x);
       }
       break;
     case 'ArrowLeft':
       if (coords.x > 0) {
         coords.x--;
-        console.log(coords.x);
+        // console.log(coords.x);
       }
       break;
     case 'ArrowRight':
-      if (coords.x < 10 - currentMatrix.length) {
+      if (coords.x < 10 - currentMatrix[0].length) {
         coords.x++;
-        console.log(coords.x);
+        // console.log(coords.x);
       }
       break;
     case 'c':
@@ -179,7 +308,8 @@ document.addEventListener('keydown', (e) => {
 
 // Actualiza la matriz del tablero del tetris
 function updateTetrisBoard() {
-  const len = currentMatrix.length;
+  const width = currentMatrix[0].length;
+  const height = currentMatrix.length;
 
   // Pone el tetromino en el nuevo lugar
   let tetrominoIndexX = 0;
@@ -189,8 +319,8 @@ function updateTetrisBoard() {
   let insideTetrominoZoneY = false;
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 10; j++) {
-      insideTetrominoZoneX = j >= coords.x && j <= coords.x + len - 1;
-      insideTetrominoZoneY = i >= coords.y && i <= coords.y + len - 1;
+      insideTetrominoZoneX = j >= coords.x && j <= coords.x + width - 1;
+      insideTetrominoZoneY = i >= coords.y && i <= coords.y + height - 1;
       insideTetrominoZone = insideTetrominoZoneX && insideTetrominoZoneY;
 
       if (
@@ -202,14 +332,14 @@ function updateTetrisBoard() {
         tetrisBoardMatrix[i][j] = 0;
       }
 
-      if (insideTetrominoZoneX && tetrominoIndexX < len - 1) {
+      if (insideTetrominoZoneX && tetrominoIndexX < width - 1) {
         tetrominoIndexX++;
       } else {
         tetrominoIndexX = 0;
       }
     }
 
-    if (insideTetrominoZoneY && tetrominoIndexY < len - 1) {
+    if (insideTetrominoZoneY && tetrominoIndexY < height - 1) {
       tetrominoIndexY++;
     } else {
       tetrominoIndexY = 0;
@@ -281,8 +411,7 @@ class BlockFactory {
   // Empieza la generacion de bloques
   startGenBlocks() {
     currentBlock = this.getNextBlock();
-    currentMatrix = blocks[currentBlock].matrix;
-    currentAngle = currentBlock === 6 ? 180 : 0;
+    currentMatrix = blocks[currentBlock].matrix[currentAngle];
     console.log(currentMatrix);
     for (let i = 0; i < 3; i++) {
       nextBlocks[i] = this.getNextBlock();
@@ -296,7 +425,7 @@ class BlockFactory {
   updateNextBlocks() {
     const newBlock = this.getNextBlock();
     currentBlock = nextBlocks[0];
-    currentMatrix = blocks[currentBlock].matrix;
+    currentMatrix = blocks[currentBlock].matrix[currentAngle];
     shift();
     nextBlocks[2] = newBlock;
     for (let i = 0; i < 3; i++) {
