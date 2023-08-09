@@ -15,18 +15,12 @@ let comboCounter = 0;
 let gameOver = false;
 let nextBlocks = [0, 0, 0];
 let holdBlock = 0;
+let holdBlockAvailable = true;
 let currentBlock;
 let currentMatrix;
 let currentAngle = 0;
 let tetrisBoardMatrix = [];
 let coords = { x: 0, y: 0 };
-const keyState = {
-  ArrowUp: false,
-  ArrowDown: false,
-  ArrowLeft: false,
-  ArrowRight: false,
-  c: false,
-};
 
 //------------------- Configuracion de los canvas ------------------
 let FPS = 1000 / 20;
@@ -221,14 +215,6 @@ const blocks = {
 };
 Object.seal(blocks);
 
-// Objeto con las filas y columnas libres de cada rotacion en angulos de los tetrominos
-const freeSpaceAngles = {
-  0: { row: 2, column: 'none' },
-  90: { row: 'none', column: 0 },
-  180: { row: 0, column: 'none' },
-  270: { row: 'none', column: 2 },
-};
-
 // -------------------------- Clase encargada de la produccion de los bloques ---------------
 class BlockFactory {
   // Obtiene el numero del siguiente bloque
@@ -260,7 +246,6 @@ class BlockFactory {
       const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
       nextTetromino.src = blocks[nextBlocks[i]].tetromino;
     }
-    holdTetromino.src = blocks[holdBlock].tetromino;
     return currentBlock;
   }
 
@@ -284,7 +269,6 @@ class BlockFactory {
     coords.y = 0;
     updateTetrisBoard();
     updateTetrisCanvas();
-    console.log(tetrisBoardMatrix);
   }
 }
 const blockFactory = new BlockFactory();
@@ -310,42 +294,43 @@ function collision(direction) {
   const height = currentMatrix.length;
   const width = currentMatrix[0].length;
 
+  let dx;
+  let dy;
   switch (direction) {
     case 'left':
-      for (let cell = 0; cell < height; cell++) {
-        const newX = coords.x - 1;
-        if (currentMatrix[cell][0]) {
-          if (tetrisBoardMatrix[cell + coords.y][newX] || newX < 0) {
-            return true;
-          }
-        }
-      }
+      dx = coords.x - 1;
+      dy = coords.y;
       break;
 
     case 'right':
-      for (let cell = 0; cell < height; cell++) {
-        const newX = coords.x + width;
-        if (currentMatrix[cell][width - 1])
-          if (tetrisBoardMatrix[cell + coords.y][newX] || newX >= 10) {
-            return true;
-          }
-      }
+      dx = coords.x + 1;
+      dy = coords.y;
       break;
 
     case 'down':
-      for (let cell = 0; cell < width; cell++) {
-        const newY = coords.y + height;
-        if (currentMatrix[height - 1][cell]) {
-          if (tetrisBoardMatrix[newY][cell] || newY >= 20) {
-            return true;
-          }
-        }
-      }
+      dx = coords.x;
+      dy = coords.y + 1;
       break;
 
     default:
-      return false;
+      break;
   }
+
+  let outsideTetrisBoard = false;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (currentMatrix[row][col]) {
+        const newX = dx + col;
+        const newY = dy + row;
+        outsideTetrisBoard = newX < 0 || newX >= 10 || newY >= 20;
+
+        if (outsideTetrisBoard || tetrisBoardMatrix[newY][newX] > 10) {
+          return true;
+        }
+      }
+    }
+  }
+
   return false;
 }
 
@@ -366,6 +351,23 @@ function correctRotate(rotatedMatrix) {
     }
   }
   return coords.x;
+}
+
+function placeBlock() {
+  console.log('desde placeBlock');
+  // Pone el bloque en la matriz de bloques establecidos
+  for (let i = 0; i < currentMatrix.length; i++) {
+    for (let j = 0; j < currentMatrix[i].length; j++) {
+      if (currentMatrix[i][j]) {
+        tetrisBoardMatrix[coords.y + i][coords.x + j] = currentBlock + 10;
+      }
+    }
+  }
+  console.log(tetrisBoardMatrix);
+  // Genera el siguiente bloque
+  currentBlock = blockFactory.updateNextBlocks();
+  currentMatrix = blocks[currentBlock].matrix[0];
+  blockFactory.genBlock(currentBlock);
 }
 
 // ----------------------- Eventos del teclado -----------------------
@@ -396,17 +398,20 @@ document.addEventListener('keydown', (e) => {
       }
       break;
     case 'c':
-      if (holdBlock === 0) {
-        holdBlock = currentBlock;
-        currentBlock = blockFactory.updateNextBlocks();
-      } else {
-        const temp = currentBlock;
-        currentBlock = holdBlock;
-        holdBlock = temp;
+      if (holdBlockAvailable) {
+        if (holdBlock === 0) {
+          holdBlock = currentBlock;
+          currentBlock = blockFactory.updateNextBlocks();
+        } else {
+          const temp = currentBlock;
+          currentBlock = holdBlock;
+          holdBlock = temp;
+        }
         holdTetromino.src = blocks[holdBlock].tetromino;
+        currentMatrix = blocks[currentBlock].matrix[0];
+        blockFactory.genBlock(currentBlock);
+        holdBlockAvailable = false;
       }
-      currentMatrix = blocks[currentBlock].matrix[0];
-      blockFactory.genBlock(currentBlock);
       break;
 
     default:
@@ -427,8 +432,10 @@ function updateTetrisBoard() {
   let insideTetrominoZone = false;
   let insideTetrominoZoneX = false;
   let insideTetrominoZoneY = false;
+
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 10; j++) {
+      // Variables que verifican si los indices estan en la zona actual del tetromino
       insideTetrominoZoneX = j >= coords.x && j <= coords.x + width - 1;
       insideTetrominoZoneY = i >= coords.y && i <= coords.y + height - 1;
       insideTetrominoZone = insideTetrominoZoneX && insideTetrominoZoneY;
@@ -438,7 +445,12 @@ function updateTetrisBoard() {
         currentMatrix[tetrominoIndexY][tetrominoIndexX]
       ) {
         tetrisBoardMatrix[i][j] = currentBlock;
-      } else {
+      } else if (
+        (!insideTetrominoZone && tetrisBoardMatrix[i][j] < 10) ||
+        (insideTetrominoZone &&
+          currentMatrix[tetrominoIndexY][tetrominoIndexX] === 0 &&
+          tetrisBoardMatrix[i][j] < 10)
+      ) {
         tetrisBoardMatrix[i][j] = 0;
       }
 
@@ -463,11 +475,16 @@ function updateTetrisCanvas() {
   ctxTetrisBoard.clearRect(0, 0, tetrisBoard.width, tetrisBoard.height);
 
   // Dibujamos el bloque en su nueva posicion
+  let blockNum = 0;
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 10; j++) {
       if (tetrisBoardMatrix[i][j] > 0) {
+        blockNum =
+          tetrisBoardMatrix[i][j] > 10
+            ? tetrisBoardMatrix[i][j] - 10
+            : tetrisBoardMatrix[i][j];
         ctxTetrisBoard.drawImage(
-          blocks[currentBlock].block,
+          blocks[blockNum].block,
           j * cellSize,
           i * cellSize,
           cellSize,
@@ -478,7 +495,7 @@ function updateTetrisCanvas() {
   }
 }
 
-// Inicializa el tablero del tetris
+// Inicializa los tableros del tetris
 function initTetrisBoard() {
   // Tetris board
   tetrisBoard.width = cellSize * 10;
@@ -500,8 +517,11 @@ function moveBlock(timestamp) {
   if (delta > FPS) {
     frames++;
     if (frames % 20 === 0) {
-      if (coords.y + currentMatrix.length < 20) {
+      if (!collision('down')) {
         coords.y++;
+      } else {
+        placeBlock();
+        holdBlockAvailable = true;
       }
     }
     updateTetrisBoard();
