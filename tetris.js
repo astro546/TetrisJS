@@ -16,6 +16,7 @@ let gameOver = false;
 let nextBlocks = [0, 0, 0];
 let holdBlock = 0;
 let holdBlockAvailable = true;
+let movementAvailable = true;
 let currentBlock;
 let currentMatrix;
 let currentAngle = 0;
@@ -240,7 +241,7 @@ class BlockFactory {
     const newBlock = this.getNextBlock();
     currentBlock = nextBlocks[0];
     currentMatrix = blocks[currentBlock].matrix[0];
-    shift();
+    shiftNextBlocks();
     nextBlocks[2] = newBlock;
     for (let i = 0; i < 3; i++) {
       const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
@@ -284,15 +285,11 @@ function rotate() {
   return blocks[currentBlock].matrix[currentAngle];
 }
 
-function shift() {
-  const [first, ...rest] = nextBlocks;
-  nextBlocks = [...rest, first];
-}
-
 // Detecta colisiones
-function collision(direction) {
-  const height = currentMatrix.length;
-  const width = currentMatrix[0].length;
+function collision(direction, rotatedMatrix) {
+  const matrix = rotatedMatrix ? rotatedMatrix : currentMatrix;
+  const height = matrix.length;
+  const width = matrix[0].length;
 
   let dx;
   let dy;
@@ -312,6 +309,11 @@ function collision(direction) {
       dy = coords.y + 1;
       break;
 
+    case 'rotation':
+      dx = coords.x;
+      dy = coords.y;
+      break;
+
     default:
       break;
   }
@@ -319,7 +321,7 @@ function collision(direction) {
   let outsideTetrisBoard = false;
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
-      if (currentMatrix[row][col]) {
+      if (matrix[row][col]) {
         const newX = dx + col;
         const newY = dy + row;
         outsideTetrisBoard = newX < 0 || newX >= 10 || newY >= 20;
@@ -353,73 +355,63 @@ function correctRotate(rotatedMatrix) {
   return coords.x;
 }
 
-function placeBlock() {
-  console.log('desde placeBlock');
-  // Pone el bloque en la matriz de bloques establecidos
-  for (let i = 0; i < currentMatrix.length; i++) {
-    for (let j = 0; j < currentMatrix[i].length; j++) {
-      if (currentMatrix[i][j]) {
-        tetrisBoardMatrix[coords.y + i][coords.x + j] = currentBlock + 10;
-      }
-    }
-  }
-  console.log(tetrisBoardMatrix);
-  // Genera el siguiente bloque
-  currentBlock = blockFactory.updateNextBlocks();
-  currentMatrix = blocks[currentBlock].matrix[0];
-  blockFactory.genBlock(currentBlock);
-}
-
 // ----------------------- Eventos del teclado -----------------------
 
 document.addEventListener('keydown', (e) => {
   const key = e.key;
-  switch (key) {
-    case 'ArrowUp':
-      const rotatedMatrix = rotate();
-      coords.x = correctRotate(rotatedMatrix);
-      currentMatrix = rotatedMatrix;
-      break;
-    case 'ArrowDown':
-      if (!collision('down')) {
-        coords.y++;
-      }
-      break;
-    case 'ArrowLeft':
-      if (!collision('left')) {
-        coords.x--;
-        // console.log(coords.x);
-      }
-      break;
-    case 'ArrowRight':
-      if (!collision('right')) {
-        coords.x++;
-        // console.log(coords.x);
-      }
-      break;
-    case 'c':
-      if (holdBlockAvailable) {
-        if (holdBlock === 0) {
-          holdBlock = currentBlock;
-          currentBlock = blockFactory.updateNextBlocks();
-        } else {
-          const temp = currentBlock;
-          currentBlock = holdBlock;
-          holdBlock = temp;
+  if (movementAvailable) {
+    switch (key) {
+      case 'ArrowUp':
+        const rotatedMatrix = rotate();
+        coords.x = correctRotate(rotatedMatrix);
+        if (!collision('rotation', rotatedMatrix)) {
+          currentMatrix = rotatedMatrix;
         }
-        holdTetromino.src = blocks[holdBlock].tetromino;
-        currentMatrix = blocks[currentBlock].matrix[0];
-        blockFactory.genBlock(currentBlock);
-        holdBlockAvailable = false;
-      }
-      break;
+        break;
+      case 'ArrowDown':
+        if (!collision('down')) {
+          coords.y++;
+        }
+        break;
+      case 'ArrowLeft':
+        if (!collision('left')) {
+          coords.x--;
+        }
+        break;
+      case 'ArrowRight':
+        if (!collision('right')) {
+          coords.x++;
+        }
+        break;
+      case 'c':
+        if (holdBlockAvailable) {
+          if (holdBlock === 0) {
+            holdBlock = currentBlock;
+            currentBlock = blockFactory.updateNextBlocks();
+          } else {
+            const temp = currentBlock;
+            currentBlock = holdBlock;
+            holdBlock = temp;
+          }
+          holdTetromino.src = blocks[holdBlock].tetromino;
+          currentMatrix = blocks[currentBlock].matrix[0];
+          blockFactory.genBlock(currentBlock);
+          holdBlockAvailable = false;
+        }
+        break;
 
-    default:
-      return false;
+      default:
+        return false;
+    }
   }
 });
 
 // ----------------- Funciones del tablero ------------------------
+
+function shiftNextBlocks() {
+  const [first, ...rest] = nextBlocks;
+  nextBlocks = [...rest, first];
+}
 
 // Actualiza la matriz del tablero del tetris
 function updateTetrisBoard() {
@@ -510,9 +502,94 @@ function initTetrisBoard() {
   }
 }
 
+function placeBlock() {
+  // Marca el bloque como establecido aumentando sus bloques en 10
+  for (let i = 0; i < currentMatrix.length; i++) {
+    for (let j = 0; j < currentMatrix[i].length; j++) {
+      if (currentMatrix[i][j]) {
+        tetrisBoardMatrix[coords.y + i][coords.x + j] = currentBlock + 10;
+      }
+    }
+  }
+
+  // Genera el siguiente bloque
+  currentBlock = blockFactory.updateNextBlocks();
+  currentMatrix = blocks[currentBlock].matrix[0];
+  blockFactory.genBlock(currentBlock);
+}
+
+// Verifica si hay una linea completada
+function verifyLines() {
+  let lineIndex = 0;
+  let winnerLines = [];
+  const verifyWinnerLine = (number) => number === 0;
+  for (let line of tetrisBoardMatrix) {
+    const incompleteLine = line.some(verifyWinnerLine);
+    if (!incompleteLine) {
+      winnerLines.push(lineIndex);
+    }
+    lineIndex++;
+  }
+  return winnerLines;
+}
+
+// Actualiza el tablero cuando hay una linea completada
+async function removeWinnerLine(winnerLines) {
+  for (let indexLine of winnerLines) {
+    tetrisBoardMatrix.splice(indexLine, 1); //Elimina la linea completada
+    tetrisBoardMatrix.unshift([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); //Pone una nueva linea al inicio
+  }
+  movementAvailable = true;
+}
+
+async function winRoutine(winnerLines) {
+  clearLine = (lineNumber) => {
+    ctxTetrisBoard.clearRect(
+      0,
+      lineNumber * cellSize,
+      tetrisBoard.width,
+      cellSize
+    );
+  };
+
+  async function flash(lineNumber) {
+    clearLine(lineNumber);
+    ctxTetrisBoard.fillStyle = 'white';
+    ctxTetrisBoard.fillRect(
+      0,
+      lineNumber * cellSize,
+      tetrisBoard.width,
+      cellSize
+    );
+  }
+
+  async function clearLineCallback(lineNumber) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        clearLine(lineNumber);
+        resolve();
+      }, 500);
+    });
+  }
+
+  async function flashAnimation(lineNumber) {
+    await flash(lineNumber);
+    await clearLineCallback(lineNumber);
+  }
+
+  const animations = [];
+  for (let lineNumber of winnerLines) {
+    animations.push(() => flashAnimation(lineNumber));
+  }
+
+  await Promise.all(animations.map((animation) => animation()));
+  await removeWinnerLine(winnerLines);
+}
+
 // Mueve el bloque dentro del tablero de tetris
-function moveBlock(timestamp) {
+async function moveBlock(timestamp) {
   const delta = timestamp - lastFrame;
+  let winnerLines;
 
   if (delta > FPS) {
     frames++;
@@ -521,9 +598,15 @@ function moveBlock(timestamp) {
         coords.y++;
       } else {
         placeBlock();
+        winnerLines = verifyLines();
+        if (winnerLines.length > 0) {
+          movementAvailable = false;
+          await winRoutine(winnerLines);
+        }
         holdBlockAvailable = true;
       }
     }
+
     updateTetrisBoard();
     updateTetrisCanvas();
     lastFrame = timestamp - (delta % FPS);
