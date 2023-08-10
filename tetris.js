@@ -1,6 +1,7 @@
 //----------------------- Elementos de canvas --------------------
 const tetrisBoard = document.querySelector('#tetris-board');
 const holdTetromino = document.querySelector('#hold-tetromino');
+const tetrisUI = document.querySelector('#tetris-UI');
 
 // Elementos de puntuacion
 const scoreElement = document.querySelector('#score');
@@ -227,7 +228,6 @@ class BlockFactory {
   startGenBlocks() {
     currentBlock = this.getNextBlock();
     currentMatrix = blocks[currentBlock].matrix[0];
-    console.log(currentMatrix);
     for (let i = 0; i < 3; i++) {
       nextBlocks[i] = this.getNextBlock();
       const nextTetromino = document.querySelector(`#next-tetromino-${i + 1}`);
@@ -268,8 +268,13 @@ class BlockFactory {
         return;
     }
     coords.y = 0;
-    updateTetrisBoard();
-    updateTetrisCanvas();
+    gameOver = losedGame();
+    if (!gameOver) {
+      updateTetrisBoard();
+      updateTetrisCanvas();
+    } else {
+      showGameOver();
+    }
   }
 }
 const blockFactory = new BlockFactory();
@@ -371,6 +376,7 @@ document.addEventListener('keydown', (e) => {
       case 'ArrowDown':
         if (!collision('down')) {
           coords.y++;
+          score++;
         }
         break;
       case 'ArrowLeft':
@@ -513,9 +519,45 @@ function placeBlock() {
   }
 
   // Genera el siguiente bloque
-  currentBlock = blockFactory.updateNextBlocks();
-  currentMatrix = blocks[currentBlock].matrix[0];
-  blockFactory.genBlock(currentBlock);
+  if (!gameOver) {
+    currentBlock = blockFactory.updateNextBlocks();
+    currentMatrix = blocks[currentBlock].matrix[0];
+    blockFactory.genBlock(currentBlock);
+  }
+}
+
+// Muestra la puntuacion, nivel y lineas completadas
+function showScoreInfo() {
+  scoreElement.textContent = `${score}`;
+  levelElement.textContent = `${level}`;
+  linesElement.textContent = `${lines}`;
+}
+
+// Calcula la puntuacion
+function calculateScore(numLines) {
+  let newScore = 0;
+  switch (numLines) {
+    case 1:
+      newScore = 100 * level;
+      break;
+
+    case 2:
+      newScore = 300 * level;
+      break;
+
+    case 3:
+      newScore = 500 * level;
+      break;
+
+    default:
+      newScore = numLines * 100 * level;
+  }
+
+  if (comboCounter > 1) {
+    newScore += 50 * comboCounter * level;
+  }
+
+  score += newScore;
 }
 
 // Verifica si hay una linea completada
@@ -542,8 +584,10 @@ async function removeWinnerLine(winnerLines) {
   movementAvailable = true;
 }
 
+// Calcula la puntuacion y muestra la animacion de lineas completadas
 async function winRoutine(winnerLines) {
   clearLine = (lineNumber) => {
+    console.log('desde clearLine');
     ctxTetrisBoard.clearRect(
       0,
       lineNumber * cellSize,
@@ -553,6 +597,7 @@ async function winRoutine(winnerLines) {
   };
 
   async function flash(lineNumber) {
+    console.log('desde flash');
     clearLine(lineNumber);
     ctxTetrisBoard.fillStyle = 'white';
     ctxTetrisBoard.fillRect(
@@ -565,6 +610,7 @@ async function winRoutine(winnerLines) {
 
   async function clearLineCallback(lineNumber) {
     return new Promise((resolve) => {
+      console.log('desde clearLineCallback');
       setTimeout(() => {
         clearLine(lineNumber);
         resolve();
@@ -582,8 +628,92 @@ async function winRoutine(winnerLines) {
     animations.push(() => flashAnimation(lineNumber));
   }
 
+  // Calculo de la puntuacion
+  lines += winnerLines.length;
+  comboCounter += 1;
+  calculateScore(winnerLines.length);
+  if (lines % 10 === 0) level++;
+
+  // Animacion
   await Promise.all(animations.map((animation) => animation()));
   await removeWinnerLine(winnerLines);
+}
+
+// Verifica si el usuario ha perdido
+function losedGame() {
+  const width = currentMatrix[0].length;
+  const height = currentMatrix.length;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (
+        tetrisBoardMatrix[coords.y + row][coords.x + col] > 10 &&
+        currentMatrix[row][col]
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Muestra la pantalla de Game Over
+function showGameOver() {
+  // Crea los elementos de alerta de juego terminado
+  const gameOverAlert = document.createElement('div');
+  const alertTitle = document.createElement('h2');
+  const alertScore = document.createElement('h3');
+  const alertMaxScore = document.createElement('h3');
+  const startButton = document.createElement('a');
+
+  // Quita el tablero de tetris y las demas secciones
+  tetrisUI.remove();
+
+  // Ponemos las clases a los elementos
+  gameOverAlert.classList.add('alert');
+  alertTitle.classList.add('alert-title');
+  alertScore.classList.add('alert-score');
+  alertMaxScore.classList.add('alert-score');
+  startButton.classList.add('start-button');
+  alertMaxScore.id = 'alert-max-score';
+
+  // Ponemos el contenido a los elementos
+  alertTitle.textContent = 'GAME OVER';
+  alertScore.innerHTML = `SCORE: <span class="max-score">${score}</span>`;
+  alertMaxScore.innerHTML = `MAX SCORE: <span class="max-score">${score}</span>`;
+  startButton.textContent = 'START';
+
+  // Poner la accion al boton de start
+  startButton.onclick = function () {
+    restartGame(gameOverAlert);
+  };
+
+  // Ponemos los elementos en pantalla
+  document.body.appendChild(gameOverAlert);
+  gameOverAlert.appendChild(alertTitle);
+  gameOverAlert.appendChild(alertScore);
+  gameOverAlert.appendChild(alertMaxScore);
+  gameOverAlert.appendChild(startButton);
+}
+
+async function restartGame(gameOverAlert) {
+  // Reinicia las variables
+  score = 0;
+  level = 1;
+  lines = 0;
+  comboCounter = 0;
+  gameOver = false;
+  nextBlocks = [0, 0, 0];
+  holdBlock = 0;
+  holdBlockAvailable = true;
+  movementAvailable = true;
+  currentAngle = 0;
+  tetrisBoardMatrix = [];
+  coords = { x: 0, y: 0 };
+
+  gameOverAlert.remove();
+  document.body.appendChild(tetrisUI);
+  holdTetromino.src = '';
+  startGame();
 }
 
 // Mueve el bloque dentro del tablero de tetris
@@ -603,10 +733,11 @@ async function moveBlock(timestamp) {
           movementAvailable = false;
           await winRoutine(winnerLines);
         }
+        comboCounter = 0;
         holdBlockAvailable = true;
       }
     }
-
+    showScoreInfo();
     updateTetrisBoard();
     updateTetrisCanvas();
     lastFrame = timestamp - (delta % FPS);

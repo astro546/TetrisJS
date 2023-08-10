@@ -107,7 +107,7 @@ section,
   margin: 2rem;
 }
 
-#start-button {
+.start-button {
   display: block;
   background-color: white;
   color: black;
@@ -115,9 +115,14 @@ section,
   padding: 1rem;
   margin: 3rem auto;
   text-decoration: none;
+  cursor: pointer;
 }
 
-#start-button:active,
-#start-button:hover {
+.start-button:active,
+.start-button:hover {
   background-color: aqua;
+}
+
+#alert-max-score {
+  margin-top: 1rem;
 }
