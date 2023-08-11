@@ -61,8 +61,9 @@ const blocks = {
       ],
 
       270: [
-        [1, 1, 0],
-        [0, 1, 1],
+        [0, 1],
+        [1, 1],
+        [1, 0],
       ],
     },
     block: redBlock,
@@ -371,6 +372,7 @@ document.addEventListener('keydown', (e) => {
         const rotatedMatrix = rotate();
         coords.x = correctRotate(rotatedMatrix);
         if (!collision('rotation', rotatedMatrix)) {
+          if (currentBlock === 1) console.log('arriba');
           currentMatrix = rotatedMatrix;
         }
         break;
@@ -537,9 +539,6 @@ function showScoreInfo() {
 // Calcula la puntuacion
 function calculateScore(numLines) {
   let newScore = 0;
-  console.log(
-    `numLines: ${numLines}, comboCounter: ${comboCounter}, level: ${level}`
-  );
   switch (numLines) {
     case 1:
       newScore = 100 * level;
@@ -566,7 +565,6 @@ function calculateScore(numLines) {
     newScore += 50 * comboCounter * level;
   }
 
-  console.log(newScore);
   score += newScore;
 }
 
