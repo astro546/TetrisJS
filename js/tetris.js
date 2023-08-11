@@ -1,7 +1,7 @@
 //----------------------- Elementos de canvas --------------------
+const tetrisUI = document.querySelector('#tetris-UI');
 const tetrisBoard = document.querySelector('#tetris-board');
 const holdTetromino = document.querySelector('#hold-tetromino');
-const tetrisUI = document.querySelector('#tetris-UI');
 
 // Elementos de puntuacion
 const scoreElement = document.querySelector('#score');
@@ -29,7 +29,7 @@ let FPS = 1000 / 20;
 let frames = 0;
 let lastFrame = 0;
 const cellSize = 45;
-const ctxTetrisBoard = tetrisBoard.getContext('2d');
+let ctxTetrisBoard = tetrisBoard.getContext('2d');
 
 // ----------------------- Bloques del Tetris ---------------------
 // Bloques individuales
@@ -273,7 +273,8 @@ class BlockFactory {
       updateTetrisBoard();
       updateTetrisCanvas();
     } else {
-      showGameOver();
+      sessionStorage.setItem('currentScore', `${score}`);
+      window.location.href = 'index.html';
     }
   }
 }
@@ -536,6 +537,9 @@ function showScoreInfo() {
 // Calcula la puntuacion
 function calculateScore(numLines) {
   let newScore = 0;
+  console.log(
+    `numLines: ${numLines}, comboCounter: ${comboCounter}, level: ${level}`
+  );
   switch (numLines) {
     case 1:
       newScore = 100 * level;
@@ -549,14 +553,20 @@ function calculateScore(numLines) {
       newScore = 500 * level;
       break;
 
+    case 4:
+      newScore = 800 * level;
+      break;
+
     default:
-      newScore = numLines * 100 * level;
+      newScore = numLines * 100 * level + 800;
+      break;
   }
 
   if (comboCounter > 1) {
     newScore += 50 * comboCounter * level;
   }
 
+  console.log(newScore);
   score += newScore;
 }
 
@@ -587,7 +597,6 @@ async function removeWinnerLine(winnerLines) {
 // Calcula la puntuacion y muestra la animacion de lineas completadas
 async function winRoutine(winnerLines) {
   clearLine = (lineNumber) => {
-    console.log('desde clearLine');
     ctxTetrisBoard.clearRect(
       0,
       lineNumber * cellSize,
@@ -597,7 +606,6 @@ async function winRoutine(winnerLines) {
   };
 
   async function flash(lineNumber) {
-    console.log('desde flash');
     clearLine(lineNumber);
     ctxTetrisBoard.fillStyle = 'white';
     ctxTetrisBoard.fillRect(
@@ -610,7 +618,6 @@ async function winRoutine(winnerLines) {
 
   async function clearLineCallback(lineNumber) {
     return new Promise((resolve) => {
-      console.log('desde clearLineCallback');
       setTimeout(() => {
         clearLine(lineNumber);
         resolve();
@@ -632,7 +639,7 @@ async function winRoutine(winnerLines) {
   lines += winnerLines.length;
   comboCounter += 1;
   calculateScore(winnerLines.length);
-  if (lines % 10 === 0) level++;
+  level = Math.floor(lines / 10) + 1;
 
   // Animacion
   await Promise.all(animations.map((animation) => animation()));
@@ -654,66 +661,6 @@ function losedGame() {
     }
   }
   return false;
-}
-
-// Muestra la pantalla de Game Over
-function showGameOver() {
-  // Crea los elementos de alerta de juego terminado
-  const gameOverAlert = document.createElement('div');
-  const alertTitle = document.createElement('h2');
-  const alertScore = document.createElement('h3');
-  const alertMaxScore = document.createElement('h3');
-  const startButton = document.createElement('a');
-
-  // Quita el tablero de tetris y las demas secciones
-  tetrisUI.remove();
-
-  // Ponemos las clases a los elementos
-  gameOverAlert.classList.add('alert');
-  alertTitle.classList.add('alert-title');
-  alertScore.classList.add('alert-score');
-  alertMaxScore.classList.add('alert-score');
-  startButton.classList.add('start-button');
-  alertMaxScore.id = 'alert-max-score';
-
-  // Ponemos el contenido a los elementos
-  alertTitle.textContent = 'GAME OVER';
-  alertScore.innerHTML = `SCORE: <span class="max-score">${score}</span>`;
-  alertMaxScore.innerHTML = `MAX SCORE: <span class="max-score">${score}</span>`;
-  startButton.textContent = 'START';
-
-  // Poner la accion al boton de start
-  startButton.onclick = function () {
-    restartGame(gameOverAlert);
-  };
-
-  // Ponemos los elementos en pantalla
-  document.body.appendChild(gameOverAlert);
-  gameOverAlert.appendChild(alertTitle);
-  gameOverAlert.appendChild(alertScore);
-  gameOverAlert.appendChild(alertMaxScore);
-  gameOverAlert.appendChild(startButton);
-}
-
-async function restartGame(gameOverAlert) {
-  // Reinicia las variables
-  score = 0;
-  level = 1;
-  lines = 0;
-  comboCounter = 0;
-  gameOver = false;
-  nextBlocks = [0, 0, 0];
-  holdBlock = 0;
-  holdBlockAvailable = true;
-  movementAvailable = true;
-  currentAngle = 0;
-  tetrisBoardMatrix = [];
-  coords = { x: 0, y: 0 };
-
-  gameOverAlert.remove();
-  document.body.appendChild(tetrisUI);
-  holdTetromino.src = '';
-  startGame();
 }
 
 // Mueve el bloque dentro del tablero de tetris
