@@ -372,7 +372,6 @@ document.addEventListener('keydown', (e) => {
         const rotatedMatrix = rotate();
         coords.x = correctRotate(rotatedMatrix);
         if (!collision('rotation', rotatedMatrix)) {
-          if (currentBlock === 1) console.log('arriba');
           currentMatrix = rotatedMatrix;
         }
         break;
@@ -561,6 +560,7 @@ function calculateScore(numLines) {
       break;
   }
 
+  console.log(comboCounter);
   if (comboCounter > 1) {
     newScore += 50 * comboCounter * level;
   }
@@ -677,8 +677,9 @@ async function moveBlock(timestamp) {
         if (winnerLines.length > 0) {
           movementAvailable = false;
           await winRoutine(winnerLines);
+        } else {
+          comboCounter = 0;
         }
-        comboCounter = 0;
         holdBlockAvailable = true;
       }
     }
